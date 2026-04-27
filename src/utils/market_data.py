@@ -76,7 +76,8 @@ class MarketDataService:
             df = df.reset_index()
             df.columns = [c.lower() for c in df.columns]
             records = df[["date", "open", "high", "low", "close", "volume"]].copy()
-            records["date"] = records["date"].astype(str)
+            import pandas as pd
+            records["date"] = pd.to_datetime(records["date"], utc=True).dt.strftime("%Y-%m-%d")
             return records.to_dict("records")
         except Exception as exc:
             logger.error("get_history(%s) failed: %s", ticker, exc)
