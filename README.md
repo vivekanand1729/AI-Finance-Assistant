@@ -2,6 +2,8 @@
 
 > **Democratizing Financial Literacy Through Intelligent Conversational AI**
 
+🚀 **Live Demo:** [https://ai-finance-assistant-1729.streamlit.app](https://ai-finance-assistant-1729.streamlit.app)
+
 A production-ready multi-agent financial education assistant built with LangChain, LangGraph, and Streamlit. Six specialized AI agents work together to answer financial questions, analyze portfolios, track market data, plan goals, synthesize news, and explain tax concepts.
 
 ---
