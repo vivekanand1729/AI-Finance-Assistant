@@ -1,0 +1,82 @@
+## ============================================================
+## AI Finance Assistant - Configuration
+## ============================================================
+
+llm:
+  provider: "openai"            # openai | google | anthropic
+  model: "gpt-4o-mini"          # Or gemini-2.0-flash / claude-sonnet-4-5
+  temperature: 0.1
+  max_tokens: 2048
+  streaming: true
+
+## Fallback model for lighter tasks
+llm_fast:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  temperature: 0.0
+  max_tokens: 512
+
+rag:
+  vector_db: "faiss"            # faiss | chroma
+  embedding_model: "text-embedding-3-small"
+  chunk_size: 600
+  chunk_overlap: 80
+  top_k: 5
+  score_threshold: 0.35
+
+market_data:
+  primary_source: "yfinance"    # yfinance | alpha_vantage
+  cache_ttl_seconds: 1800       # 30 minutes
+  max_retries: 3
+  timeout_seconds: 10
+
+agents:
+  finance_qa:
+    name: "Finance Q&A Agent"
+    description: "Handles general financial education and concepts"
+    temperature: 0.1
+  portfolio:
+    name: "Portfolio Analysis Agent"
+    description: "Analyzes portfolios, calculates metrics, gives allocation advice"
+    temperature: 0.0
+  market:
+    name: "Market Analysis Agent"
+    description: "Provides real-time market data and trend analysis"
+    temperature: 0.1
+  goal_planning:
+    name: "Goal Planning Agent"
+    description: "Helps users set and project financial goals"
+    temperature: 0.1
+  news:
+    name: "News Synthesizer Agent"
+    description: "Summarizes and contextualizes financial news"
+    temperature: 0.2
+  tax:
+    name: "Tax Education Agent"
+    description: "Explains tax concepts, account types, and strategies"
+    temperature: 0.1
+
+guardrails:
+  enabled: true
+  disclaimer_required: true
+  max_response_length: 3000
+
+observability:
+  langfuse_enabled: true
+  log_level: "INFO"
+
+web_search:
+  provider: "tavily"
+  max_results: 5
+  search_depth: "advanced"
+
+ui:
+  theme: "dark"
+  page_title: "AI Finance Assistant"
+  page_icon: "💹"
+  tabs:
+    - "💬 Chat"
+    - "📊 Portfolio"
+    - "📈 Markets"
+    - "🎯 Goals"
+    - "📰 News"
