@@ -138,22 +138,23 @@ with st.sidebar:
     }
     _env_var, _label = _env_key_map[provider]
 
-    # Pre-fill from env/secrets if already set (e.g. Streamlit Cloud Secrets)
-    _existing = os.getenv(_env_var, st.session_state.get(_env_var, ""))
+    # Check if key is already configured via Streamlit Secrets or environment
+    _configured = bool(os.getenv(_env_var, ""))
     api_key = st.text_input(
         _label,
-        value=_existing,
+        value="",
         type="password",
-        help=f"Paste your {_label}. It is stored only in this browser session.",
+        placeholder="Already configured via Secrets" if _configured else f"Paste your {_label}",
+        help=f"Leave blank to use the key from Streamlit Secrets / environment.",
     )
 
-    # Always write back to os.environ so llm_factory.py picks it up
+    # Override env var only if user explicitly enters a new key
     if api_key:
         os.environ[_env_var] = api_key
-        st.session_state[_env_var] = api_key  # persist across reruns
+        st.session_state[_env_var] = api_key
 
-    # Show a clear status indicator
-    if api_key:
+    # Status reflects whether ANY key is available (entered or pre-configured)
+    if api_key or _configured:
         st.success(f"✅ {_label} set", icon="🔑")
     else:
         st.warning(f"⚠️ Enter your {_label} to use the assistant.", icon="🔐")
