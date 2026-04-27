@@ -140,24 +140,23 @@ with st.sidebar:
 
     # Check if key is already configured via Streamlit Secrets or environment
     _configured = bool(os.getenv(_env_var, ""))
-    api_key = st.text_input(
-        _label,
-        value="",
-        type="password",
-        placeholder="Already configured via Secrets" if _configured else f"Paste your {_label}",
-        help=f"Leave blank to use the key from Streamlit Secrets / environment.",
-    )
 
-    # Override env var only if user explicitly enters a new key
-    if api_key:
-        os.environ[_env_var] = api_key
-        st.session_state[_env_var] = api_key
-
-    # Status reflects whether ANY key is available (entered or pre-configured)
-    if api_key or _configured:
-        st.success(f"✅ {_label} set", icon="🔑")
+    if _configured:
+        # Key came from Secrets — don't render any input to avoid accidental overrides
+        st.success(f"✅ {_label} configured", icon="🔑")
     else:
-        st.warning(f"⚠️ Enter your {_label} to use the assistant.", icon="🔐")
+        # No key found — let user enter one manually
+        api_key = st.text_input(
+            _label,
+            value="",
+            type="password",
+            placeholder=f"Paste your {_label}",
+            key=f"api_key_{provider}",
+        )
+        if api_key:
+            os.environ[_env_var] = api_key
+        else:
+            st.warning(f"⚠️ Enter your {_label} to use the assistant.", icon="🔐")
 
     st.divider()
     st.markdown("### 🤖 Active Agents")
