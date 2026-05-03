@@ -25,7 +25,7 @@ rag:
   score_threshold: 0.35
 
 market_data:
-  primary_source: "yfinance"    # yfinance | alpha_vantage
+  primary_source: "finnhub"     # finnhub | alpha_vantage
   cache_ttl_seconds: 1800       # 30 minutes
   max_retries: 3
   timeout_seconds: 10

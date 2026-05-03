@@ -16,7 +16,6 @@ streamlit>=1.38.0
 plotly>=5.24.0
 
 ## Market Data
-yfinance>=0.2.44
 requests>=2.32.0
 
 ## Data Processing

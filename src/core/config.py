@@ -96,3 +96,6 @@ def langfuse_keys() -> tuple[str, str, str]:
 
 def guardrails_key() -> str:
     return os.getenv("GUARDRAILS_API_KEY", "")
+
+def finnhub_key() -> str:
+    return os.getenv("FINNHUB_API_KEY", "")

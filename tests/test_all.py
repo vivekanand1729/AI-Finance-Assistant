@@ -291,33 +291,49 @@ from unittest.mock import patch, MagicMock
 from src.utils.market_data import MarketDataService
 
 
+def _mock_finnhub(endpoint_responses: dict):
+    """Return a requests.get mock that dispatches by URL substring."""
+    def _side_effect(url, **kwargs):
+        resp = MagicMock()
+        resp.raise_for_status = MagicMock()
+        for key, payload in endpoint_responses.items():
+            if key in url:
+                resp.json.return_value = payload
+                return resp
+        resp.json.return_value = {}
+        return resp
+    return _side_effect
+
+
 class TestMarketDataService:
     def setup_method(self):
         self.svc = MarketDataService()
+        # Clear the module-level cache between tests
+        from src.utils import market_data as md
+        md._cache.clear()
 
     def test_sanitize_ticker_in_get_quote(self):
-        """Test that quotes use uppercased ticker."""
-        with patch("yfinance.Ticker") as mock_ticker:
-            mock_ti = MagicMock()
-            mock_ti.fast_info.last_price = 150.0
-            mock_ti.fast_info.previous_close = 148.0
-            mock_ti.fast_info.market_cap = 1e12
-            mock_ti.fast_info.year_high = 180.0
-            mock_ti.fast_info.year_low = 120.0
-            mock_ti.fast_info.currency = "USD"
-            mock_ticker.return_value = mock_ti
-            result = self.svc.get_quote("aapl")
-            assert result["ticker"] == "AAPL"
+        """Lowercase ticker is uppercased before the API call."""
+        quote_payload   = {"c": 150.0, "pc": 148.0, "dp": 1.35, "v": 1000000}
+        metric_payload  = {"metric": {"52WeekHigh": 180.0, "52WeekLow": 120.0}}
+        responses = {"quote": quote_payload, "metric": metric_payload}
+        with patch("requests.get", side_effect=_mock_finnhub(responses)):
+            with patch("src.core.config.finnhub_key", return_value="test-key"):
+                result = self.svc.get_quote("aapl")
+        assert result["ticker"] == "AAPL"
+        assert result["price"] == 150.0
 
     def test_get_quote_error_returns_error_dict(self):
-        with patch("yfinance.Ticker", side_effect=Exception("Network error")):
-            result = self.svc.get_quote("BADTICKER")
-            assert "error" in result
+        with patch("requests.get", side_effect=Exception("Network error")):
+            with patch("src.core.config.finnhub_key", return_value="test-key"):
+                result = self.svc.get_quote("BADTICKER")
+        assert "error" in result
 
     def test_get_history_error_returns_empty(self):
-        with patch("yfinance.Ticker", side_effect=Exception("API down")):
-            result = self.svc.get_history("AAPL", "1mo")
-            assert result == []
+        with patch("requests.get", side_effect=Exception("API down")):
+            with patch("src.core.config.finnhub_key", return_value="test-key"):
+                result = self.svc.get_history("AAPL", "1mo")
+        assert result == []
 
     def test_get_portfolio_prices_returns_dict(self):
         with patch.object(self.svc, "get_quote") as mock_quote:
