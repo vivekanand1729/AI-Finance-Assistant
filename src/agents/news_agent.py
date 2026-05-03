@@ -5,10 +5,10 @@ Fetches and synthesizes financial news using Tavily search API.
 from __future__ import annotations
 
 import json
-import os
 from datetime import date
 
 from src.agents.base_agent import BaseFinanceAgent
+from src.core.config import tavily_key
 from src.core.state import AgentState
 
 
