@@ -22,7 +22,7 @@ import pandas as pd
 _SECRET_KEYS = [
     "OPENAI_API_KEY", "GOOGLE_API_KEY", "ANTHROPIC_API_KEY",
     "TAVILY_API_KEY", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY",
-    "LANGFUSE_HOST", "LANGCHAIN_API_KEY",
+    "LANGFUSE_HOST", "LANGCHAIN_API_KEY", "GUARDRAILS_API_KEY",
 ]
 for _k in _SECRET_KEYS:
     try:
@@ -157,6 +157,17 @@ with st.sidebar:
             os.environ[_env_var] = api_key
         else:
             st.warning(f"⚠️ Enter your {_label} to use the assistant.", icon="🔐")
+
+    st.divider()
+    st.markdown("### 🛡️ Guardrails")
+    from src.core.guardrails import guardrails_status  # noqa: PLC0415
+    _gr = guardrails_status()
+    if _gr["sdk_enabled"]:
+        st.success("Guardrails AI active", icon="✅")
+    elif _gr["api_key_set"]:
+        st.warning("Guardrails AI key set but SDK not loaded", icon="⚠️")
+    else:
+        st.info("Built-in pattern guardrails active", icon="🔒")
 
     st.divider()
     st.markdown("### 🤖 Active Agents")

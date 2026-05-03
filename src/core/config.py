@@ -93,3 +93,6 @@ def langfuse_keys() -> tuple[str, str, str]:
     sec = os.getenv("LANGFUSE_SECRET_KEY", "")
     host = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
     return pub, sec, host
+
+def guardrails_key() -> str:
+    return os.getenv("GUARDRAILS_API_KEY", "")
