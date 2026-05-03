@@ -48,13 +48,13 @@ class NewsSynthesizerAgent(BaseFinanceAgent):
 
     def _fetch_news(self, query: str) -> str:
         """Fetch news via Tavily or fallback to a message."""
-        tavily_key = os.getenv("TAVILY_API_KEY", "")
-        if not tavily_key:
+        api_key = tavily_key()
+        if not api_key:
             return self._fallback_news()
 
         try:
             from tavily import TavilyClient
-            client = TavilyClient(api_key=tavily_key)
+            client = TavilyClient(api_key=api_key)
             results = client.search(
                 query=f"financial news {query}",
                 search_depth="basic",
