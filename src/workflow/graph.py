@@ -205,3 +205,39 @@ def run_query(
     graph = get_graph()
     final_state = graph.invoke(initial_state)
     return final_state
+
+
+def stream_run_query(
+    user_query: str,
+    portfolio_data: dict | None = None,
+    goal_data: dict | None = None,
+    session_id: str | None = None,
+    message_history: list | None = None,
+):
+    """
+    Streaming variant of run_query.
+    Yields {node_name: AgentState} after each LangGraph node completes,
+    keeping the WebSocket connection alive between steps.
+    """
+    from langchain_core.messages import HumanMessage
+
+    session_id = session_id or str(uuid.uuid4())[:8]
+
+    initial_state: AgentState = {
+        "messages": (message_history or []) + [HumanMessage(content=user_query)],
+        "user_query": user_query,
+        "intent": "",
+        "active_agent": "",
+        "agent_response": "",
+        "rag_context": [],
+        "market_data": {},
+        "portfolio_data": portfolio_data or {},
+        "goal_data": goal_data or {},
+        "error": None,
+        "iterations": 0,
+        "session_id": session_id,
+    }
+
+    graph = get_graph()
+    for step in graph.stream(initial_state):
+        yield step

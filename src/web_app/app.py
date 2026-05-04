@@ -241,49 +241,67 @@ with tab_chat:
         with st.chat_message("user", avatar="👤"):
             st.markdown(prompt)
 
-        # Run agent
+        # Run agent with streaming to keep WebSocket alive between steps
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("Thinking…"):
-                try:
-                    from src.workflow.graph import run_query
-                    from langchain_core.messages import HumanMessage, AIMessage
+            _INTENT_LABELS = {
+                "finance_qa": "📚 Finance Q&A",
+                "portfolio":  "📊 Portfolio Analysis",
+                "market":     "📈 Market Data",
+                "goal":       "🎯 Goal Planning",
+                "news":       "📰 News Search",
+                "tax":        "💰 Tax Education",
+                "fallback":   "🤖 Assistant",
+            }
+            try:
+                from src.workflow.graph import stream_run_query
+                from langchain_core.messages import HumanMessage, AIMessage
 
-                    # Build message history for context
-                    history = []
-                    for m in st.session_state.chat_history[:-1]:
-                        if m["role"] == "user":
-                            history.append(HumanMessage(content=m["content"]))
-                        else:
-                            history.append(AIMessage(content=m["content"]))
+                history = []
+                for m in st.session_state.chat_history[:-1]:
+                    if m["role"] == "user":
+                        history.append(HumanMessage(content=m["content"]))
+                    else:
+                        history.append(AIMessage(content=m["content"]))
 
-                    result = run_query(
+                response = ""
+                agent_name = "Assistant"
+
+                with st.status("Routing your question…", expanded=False) as status:
+                    for step in stream_run_query(
                         user_query=prompt,
                         portfolio_data={"holdings": st.session_state.portfolio_holdings},
                         session_id=st.session_state.session_id,
                         message_history=history,
-                    )
+                    ):
+                        node_name  = list(step.keys())[0]
+                        node_state = list(step.values())[0]
 
-                    response = result.get("agent_response", "I couldn't generate a response.")
-                    agent_name = result.get("active_agent", "Assistant")
+                        if node_name == "classify":
+                            intent = node_state.get("intent", "")
+                            label  = _INTENT_LABELS.get(intent, "🤖 Assistant")
+                            status.update(label=f"Routing to {label}…")
 
-                    # Update cached data
-                    if result.get("last_portfolio_metrics"):
-                        st.session_state.last_portfolio_metrics = result["last_portfolio_metrics"]
-                    if result.get("market_data"):
-                        st.session_state.last_market_data = result["market_data"]
+                        elif node_state.get("agent_response"):
+                            response   = node_state["agent_response"]
+                            agent_name = node_state.get("active_agent", "Assistant")
+                            if node_state.get("market_data"):
+                                st.session_state.last_market_data = node_state["market_data"]
+                            if node_state.get("last_portfolio_metrics"):
+                                st.session_state.last_portfolio_metrics = node_state["last_portfolio_metrics"]
+                            status.update(label="Done", state="complete", expanded=False)
 
-                    st.markdown(f'<div class="agent-badge">🤖 {agent_name}</div>', unsafe_allow_html=True)
-                    st.markdown(response)
+                st.markdown(f'<div class="agent-badge">🤖 {agent_name}</div>', unsafe_allow_html=True)
+                st.markdown(response or "I couldn't generate a response.")
 
-                    st.session_state.chat_history.append(
-                        {"role": "assistant", "content": response, "agent": agent_name}
-                    )
-                except Exception as exc:
-                    err_msg = f"⚠️ Error: {exc}\n\nPlease check your API key configuration in the sidebar."
-                    st.error(err_msg)
-                    st.session_state.chat_history.append(
-                        {"role": "assistant", "content": err_msg, "agent": "System"}
-                    )
+                st.session_state.chat_history.append(
+                    {"role": "assistant", "content": response, "agent": agent_name}
+                )
+            except Exception as exc:
+                err_msg = f"⚠️ Error: {exc}\n\nPlease check your API key configuration in the sidebar."
+                st.error(err_msg)
+                st.session_state.chat_history.append(
+                    {"role": "assistant", "content": err_msg, "agent": "System"}
+                )
 
     # Suggested prompts
     if not st.session_state.chat_history:
